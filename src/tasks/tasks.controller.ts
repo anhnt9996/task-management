@@ -1,12 +1,10 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { omit, pick } from 'lodash';
+
 import { BaseController } from 'src/base.controller';
 import { IResponse } from 'src/interfaces/response.interface';
+import { CreateTaskDTO } from './dto/create.dto';
 import { TasksService } from './tasks.service';
-
-interface CreateTaskDTO {
-  title: string;
-  description: string;
-}
 
 @Controller('tasks')
 export class TasksController extends BaseController {
@@ -20,12 +18,26 @@ export class TasksController extends BaseController {
   }
 
   @Post()
-  create(): IResponse {
-    const task: CreateTaskDTO = {
-      title: 'test',
-      description: 'test',
+  create(@Body() body: CreateTaskDTO): IResponse {
+    const task = {
+      ...pick(body, ['title', 'description']),
     };
 
-    return this.response(200, this.tasksService.create(task));
+    return this.response(
+      200,
+      pick(this.tasksService.create(task), [
+        'uuid',
+        'title',
+        'description',
+        'status',
+        'status_in_string',
+      ]),
+    );
+  }
+
+  @Get(':id')
+  show(@Param('id') taskId: string): IResponse {
+    const task = this.tasksService.detail(taskId);
+    return this.response(200, omit(task, 'id'));
   }
 }

@@ -21,10 +21,13 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "^7.5.1",
+    "@nestjs/common": "^7.6.5",
     "@nestjs/core": "^7.5.1",
     "@nestjs/platform-express": "^7.5.1",
-    "lmhify": "https://github.com/anhnt9996/lmhify/tarball/v1.0.1",
+    "@types/lodash": "^4.14.167",
+    "@types/uuid": "^8.3.0",
+    "i": "^0.3.6",
+    "npm": "^6.14.10",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.3"
@@ -35,7 +38,7 @@
     "@nestjs/testing": "^7.5.1",
     "@types/express": "^4.17.8",
     "@types/jest": "^26.0.15",
-    "@types/node": "^14.14.6",
+    "@types/node": "^14.14.20",
     "@types/supertest": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^4.6.1",
     "@typescript-eslint/parser": "^4.6.1",

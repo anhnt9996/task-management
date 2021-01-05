@@ -8,6 +8,7 @@ export enum TaskStatus {
 
 export interface Task {
   readonly id: number;
+  readonly uuid: string;
   title: string;
   description: string;
   status: TaskStatus;
