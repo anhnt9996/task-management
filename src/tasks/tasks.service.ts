@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import { v1 as uuid } from 'uuid';
 
 import { CreateTaskDTO } from './dto/create.dto';
-import { Task, TaskStatus } from './task.model';
+import { Task, TaskStatus, TaskWithStatusInString } from './task.model';
 import AppConfig from '../config/app.config';
 
 @Injectable()
@@ -16,14 +16,13 @@ export class TasksService {
   }
 
   getTasks(): Task[] {
-    return this.tasks.map((task) => {
-      task['status_in_string'] = TasksService.statusToString(task.status);
-
-      return task;
-    });
+    return this.tasks.map((task) => ({
+      ...task,
+      statusInString: TasksService.statusToString(task.status),
+    }));
   }
 
-  create(data: CreateTaskDTO): Task {
+  async create(data: CreateTaskDTO): Promise<TaskWithStatusInString> {
     if (isEmpty(data)) {
       return;
     }
@@ -33,38 +32,92 @@ export class TasksService {
       uuid: uuid(),
       status: TaskStatus.NEW,
       ...data,
-      created_at: new Date().getTime(),
-      updated_at: new Date().getTime(),
+      createdAt: new Date().getTime(),
+      updatedAt: new Date().getTime(),
     };
 
     this.tasks.push(task);
-    this.store();
-    task['status_in_string'] = TasksService.statusToString(task.status);
+    await this.store();
 
-    return task;
+    return {
+      ...task,
+      statusInString: TasksService.statusToString(task.status),
+    };
   }
 
-  detail(uuid: string): Task {
+  detail(uuid: string): TaskWithStatusInString | null {
     const task = this.tasks.find((task) => task.uuid === uuid);
 
-    if (task) {
-      task['status_in_string'] = TasksService.statusToString(task.status);
+    if (!task) {
+      return null;
     }
 
-    return task;
+    return {
+      ...task,
+      statusInString: TasksService.statusToString(task.status),
+    };
   }
 
   static statusToString(status: number): string | null {
-    return TaskStatus[status].toLowerCase().replace('_', ' ') || null;
+    return TaskStatus[status]?.toLowerCase()?.replace('_', ' ') || null;
   }
 
-  private async store(): Promise<void> {
-    await fs.writeFile(AppConfig.FILEPATH, JSON.stringify(this.tasks));
+  private async store(tasks = null): Promise<void> {
+    tasks = tasks || this.tasks;
+
+    await fs.writeFile(AppConfig.FILEPATH, JSON.stringify(tasks));
   }
 
   private async retrieve(): Promise<Task[]> {
     const tasks = await fs.readFile(AppConfig.FILEPATH, 'utf8');
 
+    if (!tasks) {
+      return [];
+    }
+
     return JSON.parse(tasks);
+  }
+
+  async delete(uuid: string): Promise<boolean> {
+    const indexOfTask = this.tasks.findIndex((task) => task.uuid === uuid);
+
+    if (!indexOfTask) {
+      return false;
+    }
+
+    await this.store(
+      this.tasks
+        .slice(0, indexOfTask)
+        .concat(this.tasks.slice(indexOfTask + 1)),
+    );
+
+    return true;
+  }
+
+  async updateStatus(
+    uuid: string,
+    nextStatus: TaskStatus,
+  ): Promise<TaskWithStatusInString> | null {
+    const task = this.tasks.find((task) => task.uuid === uuid);
+
+    if (!task) {
+      return null;
+    }
+
+    if (task.status === nextStatus) {
+      return {
+        ...task,
+        statusInString: TasksService.statusToString(task.status),
+      };
+    }
+
+    task.status = nextStatus;
+    task.updatedAt = new Date().getTime();
+    await this.store();
+
+    return {
+      ...task,
+      statusInString: TasksService.statusToString(task.status),
+    };
   }
 }

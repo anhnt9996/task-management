@@ -12,6 +12,10 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  readonly created_at: number;
-  updated_at: number;
+  readonly createdAt: number;
+  updatedAt: number;
+}
+
+export interface TaskWithStatusInString extends Task {
+  statusInString: string;
 }
