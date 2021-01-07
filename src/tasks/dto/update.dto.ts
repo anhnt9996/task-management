@@ -1,3 +1,11 @@
-import { CreateTaskDTO } from './create.dto';
+import { IsOptional, MinLength } from 'class-validator';
 
-export class UpdateTaskDTO extends CreateTaskDTO {}
+export class UpdateTaskDTO {
+  @MinLength(6)
+  @IsOptional()
+  title: string;
+
+  @MinLength(6)
+  @IsOptional()
+  description: string;
+}

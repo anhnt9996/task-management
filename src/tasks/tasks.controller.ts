@@ -6,15 +6,23 @@ import {
   Param,
   Delete,
   Put,
+  HttpCode,
+  UsePipes,
+  ValidationPipe,
+  UseFilters,
 } from '@nestjs/common';
 import { omit, pick } from 'lodash';
 
 import { BaseController } from 'src/base.controller';
+import { HttpExceptionFilter } from 'src/Exceptions/http-filter.exception';
 import { CreateTaskDTO } from './dto/create.dto';
+import { UpdateTaskDTO } from './dto/update.dto';
+import { TaskStatusValidationPipe } from './pipes/status-validation.pipe';
 import { TaskStatus } from './task.model';
 import { TasksService } from './tasks.service';
 
 @Controller('tasks')
+@UseFilters(HttpExceptionFilter)
 export class TasksController extends BaseController {
   constructor(private tasksService: TasksService) {
     super();
@@ -30,49 +38,46 @@ export class TasksController extends BaseController {
   }
 
   @Post()
+  @HttpCode(201)
+  @UsePipes(ValidationPipe)
   async create(@Body() body: CreateTaskDTO) {
     const task = await this.tasksService.create({
       ...pick(body, ['title', 'description']),
     });
 
     return this.response(
-      200,
+      201,
       pick(task, ['uuid', 'title', 'description', 'status', 'statusInString']),
     );
   }
 
   @Get(':uuid')
   show(@Param('uuid') uuid: string) {
-    const task = this.tasksService.detail(uuid);
+    const task = this.tasksService.getTaskByUUID(uuid);
 
-    if (!task) {
-      return this.response(404, {});
-    }
+    return this.response(200, omit(task, 'id'));
+  }
 
+  @Put(':uuid')
+  @UsePipes(ValidationPipe)
+  async edit(@Param('uuid') uuid: string, @Body() data: UpdateTaskDTO) {
+    const task = await this.tasksService.update(uuid, data);
     return this.response(200, omit(task, 'id'));
   }
 
   @Put(':uuid/status')
   async updateStatus(
     @Param('uuid') uuid: string,
-    @Body('nextStatus') nextStatus: TaskStatus,
+    @Body('nextStatus', TaskStatusValidationPipe) nextStatus: TaskStatus,
   ) {
     const task = await this.tasksService.updateStatus(uuid, nextStatus);
-
-    if (!task) {
-      return this.response(404, {});
-    }
 
     return this.response(200, omit(task, 'id'));
   }
 
   @Delete(':uuid')
   async delete(@Param('uuid') uuid: string) {
-    const isDeleteSuccess = await this.tasksService.delete(uuid);
-
-    if (!isDeleteSuccess) {
-      return this.response(400, [], 'Failed to delete');
-    }
+    await this.tasksService.delete(uuid);
 
     return this.response(200, []);
   }

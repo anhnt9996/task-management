@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { isEmpty } from 'lodash';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { isEmpty, omit } from 'lodash';
 import { promises as fs } from 'fs';
 import { v1 as uuid } from 'uuid';
 
 import { CreateTaskDTO } from './dto/create.dto';
 import { Task, TaskStatus, TaskWithStatusInString } from './task.model';
 import AppConfig from '../config/app.config';
+import { UpdateTaskDTO } from './dto/update.dto';
 
 @Injectable()
 export class TasksService {
@@ -37,6 +38,7 @@ export class TasksService {
     };
 
     this.tasks.push(task);
+
     await this.store();
 
     return {
@@ -45,11 +47,11 @@ export class TasksService {
     };
   }
 
-  detail(uuid: string): TaskWithStatusInString | null {
+  getTaskByUUID(uuid: string): TaskWithStatusInString | never {
     const task = this.tasks.find((task) => task.uuid === uuid);
 
     if (!task) {
-      return null;
+      throw new HttpException(`Not found task #${uuid}`, HttpStatus.NOT_FOUND);
     }
 
     return {
@@ -62,10 +64,10 @@ export class TasksService {
     return TaskStatus[status]?.toLowerCase()?.replace('_', ' ') || null;
   }
 
-  private async store(tasks = null): Promise<void> {
-    tasks = tasks || this.tasks;
+  private async store(tasks = []): Promise<void> {
+    this.tasks = isEmpty(tasks) ? this.tasks : tasks;
 
-    await fs.writeFile(AppConfig.FILEPATH, JSON.stringify(tasks));
+    await fs.writeFile(AppConfig.FILEPATH, JSON.stringify(this.tasks));
   }
 
   private async retrieve(): Promise<Task[]> {
@@ -81,8 +83,8 @@ export class TasksService {
   async delete(uuid: string): Promise<boolean> {
     const indexOfTask = this.tasks.findIndex((task) => task.uuid === uuid);
 
-    if (!indexOfTask) {
-      return false;
+    if (indexOfTask === -1) {
+      throw new HttpException(`Not found task #${uuid}`, HttpStatus.NOT_FOUND);
     }
 
     await this.store(
@@ -97,12 +99,9 @@ export class TasksService {
   async updateStatus(
     uuid: string,
     nextStatus: TaskStatus,
-  ): Promise<TaskWithStatusInString> | null {
-    const task = this.tasks.find((task) => task.uuid === uuid);
-
-    if (!task) {
-      return null;
-    }
+  ): Promise<TaskWithStatusInString> | never {
+    const task = omit(this.getTaskByUUID(uuid), 'statusInString');
+    const indexOfTask = this.tasks.findIndex((task) => task.uuid === uuid);
 
     if (task.status === nextStatus) {
       return {
@@ -113,7 +112,44 @@ export class TasksService {
 
     task.status = nextStatus;
     task.updatedAt = new Date().getTime();
-    await this.store();
+
+    const tasks = this.tasks
+      .slice(0, indexOfTask)
+      .concat(task)
+      .concat(this.tasks.slice(indexOfTask + 1));
+
+    await this.store(tasks);
+
+    return {
+      ...task,
+      statusInString: TasksService.statusToString(task.status),
+    };
+  }
+
+  async update(
+    uuid: string,
+    data: UpdateTaskDTO,
+  ): Promise<TaskWithStatusInString> | never {
+    const task = omit(this.getTaskByUUID(uuid), 'statusInString');
+    const indexOfTask = this.tasks.findIndex((task) => task.uuid === uuid);
+
+    if (isEmpty(data)) {
+      return {
+        ...task,
+        statusInString: TasksService.statusToString(task.status),
+      };
+    }
+
+    task.title = data['title'] || task.title;
+    task.description = data['description'] || task.description;
+    task.updatedAt = new Date().getTime();
+
+    const tasks = this.tasks
+      .slice(0, indexOfTask)
+      .concat(task)
+      .concat(this.tasks.slice(indexOfTask + 1));
+
+    await this.store(tasks);
 
     return {
       ...task,
