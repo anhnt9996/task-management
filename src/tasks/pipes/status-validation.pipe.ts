@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, PipeTransform } from '@nestjs/common';
-import { TaskStatus } from '../task.model';
+import { TaskStatus } from '../task.entity';
 
 export class TaskStatusValidationPipe implements PipeTransform {
   readonly allowedStatus = [
