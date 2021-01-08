@@ -1,11 +1,11 @@
 import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  Generated,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
   UpdateDateColumn,
+  BaseEntity,
+  Generated,
+  Column,
+  Entity,
 } from 'typeorm';
 
 export enum TaskStatus {
@@ -14,10 +14,6 @@ export enum TaskStatus {
   COMPLETED = 3,
   CLOSED = 4,
   PENDING = 99,
-}
-
-export interface TaskWithStatusInString extends Task {
-  statusInString?: string;
 }
 
 @Entity('tasks')
@@ -42,9 +38,13 @@ export class Task extends BaseEntity {
   })
   status: TaskStatus;
 
-  @CreateDateColumn()
-  createdAt;
+  @CreateDateColumn({
+    type: 'datetime',
+  })
+  createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt;
+  @UpdateDateColumn({
+    type: 'datetime',
+  })
+  updatedAt: Date;
 }
