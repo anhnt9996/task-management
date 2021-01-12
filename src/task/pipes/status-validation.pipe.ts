@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, PipeTransform } from '@nestjs/common';
+import { BadRequestException, PipeTransform } from '@nestjs/common';
 import { TaskStatus } from '../task.entity';
 
 export class TaskStatusValidationPipe implements PipeTransform {
@@ -10,12 +10,9 @@ export class TaskStatusValidationPipe implements PipeTransform {
     TaskStatus.PENDING,
   ];
 
-  transform(value) {
+  transform(value: any) {
     if (!this.allowedStatus.includes(parseInt(value))) {
-      throw new HttpException(
-        `Status '${value}' is invalid`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(`Status '${value}' is invalid`);
     }
 
     return value;

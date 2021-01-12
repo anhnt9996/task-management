@@ -6,6 +6,7 @@ import {
   Generated,
   Column,
   Entity,
+  DeleteDateColumn,
 } from 'typeorm';
 
 export enum TaskStatus {
@@ -38,13 +39,12 @@ export class Task extends BaseEntity {
   })
   status: TaskStatus;
 
-  @CreateDateColumn({
-    type: 'datetime',
-  })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'datetime',
-  })
+  @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

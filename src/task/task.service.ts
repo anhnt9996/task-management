@@ -4,8 +4,9 @@ import { TaskRepository } from './task.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTaskDTO } from './dto/create.dto';
 import { UpdateTaskDTO } from './dto/update.dto';
-import { isEmpty, omit } from 'lodash';
+import { isEmpty, pick } from 'lodash';
 import { TaskResponse } from './task.response';
+import { FilterDto } from './dto/filter.dto';
 
 @Injectable()
 export class TasksService {
@@ -13,8 +14,8 @@ export class TasksService {
     @InjectRepository(TaskRepository) private taskRepository: TaskRepository,
   ) {}
 
-  async getTasks(): Promise<TaskResponse[]> {
-    const tasks = await this.taskRepository.find();
+  async getTasks(query: FilterDto): Promise<TaskResponse[]> {
+    const tasks = await this.taskRepository.getTasks(query);
 
     return tasks.map((task) => this.transformTask(task));
   }
@@ -24,9 +25,7 @@ export class TasksService {
       return;
     }
 
-    const task = await this.taskRepository.save({
-      ...data,
-    });
+    const task = await this.taskRepository.save(data);
 
     return this.transformTask(task);
   }
@@ -57,51 +56,32 @@ export class TasksService {
     };
   }
 
-  // async delete(uuid: string): Promise<boolean> {
-  //   const indexOfTask = this.tasks.findIndex((task) => task.uuid === uuid);
-  //   if (indexOfTask === -1) {
-  //     throw new HttpException(`Not found task #${uuid}`, HttpStatus.NOT_FOUND);
-  //   }
-  //   await this.store(
-  //     this.tasks
-  //       .slice(0, indexOfTask)
-  //       .concat(this.tasks.slice(indexOfTask + 1)),
-  //   );
-  //   return true;
-  // }
+  async delete(uuid: string): Promise<boolean | never> {
+    await this.getTaskByUUID(uuid);
+
+    this.taskRepository.softDelete({ uuid });
+
+    return true;
+  }
 
   async updateStatus(
     uuid: string,
     nextStatus: TaskStatus,
-  ): Promise<TaskResponse> | never {
+  ): Promise<TaskResponse | never> {
     await this.taskRepository.update({ uuid }, { status: nextStatus });
 
     return this.getTaskByUUID(uuid);
   }
 
-  // async update(
-  //   uuid: string,
-  //   data: UpdateTaskDTO,
-  // ): Promise<TaskResponse> | never {
-  //   const task = omit(this.getTaskByUUID(uuid), 'statusInString');
-  //   const indexOfTask = this.tasks.findIndex((task) => task.uuid === uuid);
-  //   if (isEmpty(data)) {
-  //     return {
-  //       ...task,
-  //       statusInString: TasksService.statusToString(task.status),
-  //     };
-  //   }
-  //   task.title = data['title'] || task.title;
-  //   task.description = data['description'] || task.description;
-  //   task.updatedAt = new Date().getTime();
-  //   const tasks = this.tasks
-  //     .slice(0, indexOfTask)
-  //     .concat(task)
-  //     .concat(this.tasks.slice(indexOfTask + 1));
-  //   await this.store(tasks);
-  //   return {
-  //     ...task,
-  //     statusInString: TasksService.statusToString(task.status),
-  //   };
-  // }
+  async update(
+    uuid: string,
+    data: UpdateTaskDTO,
+  ): Promise<TaskResponse | never> {
+    await this.taskRepository.update(
+      { uuid },
+      pick(data, ['title', 'description']),
+    );
+
+    return this.getTaskByUUID(uuid);
+  }
 }
