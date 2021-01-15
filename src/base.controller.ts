@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
 export class BaseController {
-  response<T>(code = HttpStatus.OK, data: Array<T> | T, message = '') {
+  response<T>(data: Array<T> | T, code = HttpStatus.OK, message = '') {
     return {
       code,
       data,

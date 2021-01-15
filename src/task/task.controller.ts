@@ -17,13 +17,15 @@ import {
   UsePipes,
   ValidationPipe,
   UseFilters,
-  HttpStatus,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { TaskStatus } from './task.entity';
 import { FilterDto } from './dto/filter.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('tasks')
+@UseGuards(AuthGuard())
 @UseFilters(HttpExceptionFilter)
 export class TasksController extends BaseController {
   constructor(private tasksService: TasksService) {
@@ -34,7 +36,7 @@ export class TasksController extends BaseController {
   async index(@Query() query: FilterDto) {
     const tasks = await this.tasksService.getTasks(query);
 
-    return this.response(undefined, tasks);
+    return this.response(tasks);
   }
 
   @Post()
@@ -45,14 +47,14 @@ export class TasksController extends BaseController {
       ...pick(body, ['title', 'description']),
     });
 
-    return this.response(HttpStatus.CREATED, task);
+    return this.response(task);
   }
 
   @Get(':uuid')
   async show(@Param('uuid') uuid: string) {
     const task = await this.tasksService.getTaskByUUID(uuid);
 
-    return this.response(undefined, task);
+    return this.response(task);
   }
 
   @Put(':uuid')
@@ -60,7 +62,7 @@ export class TasksController extends BaseController {
   async edit(@Param('uuid') uuid: string, @Body() data: UpdateTaskDTO) {
     const task = await this.tasksService.update(uuid, data);
 
-    return this.response(undefined, omit(task, 'id'));
+    return this.response(omit(task, 'id'));
   }
 
   @Put(':uuid/status')
@@ -71,13 +73,13 @@ export class TasksController extends BaseController {
   ) {
     const task = await this.tasksService.updateStatus(uuid, nextStatus);
 
-    return this.response(undefined, task);
+    return this.response(task);
   }
 
   @Delete(':uuid')
   async delete(@Param('uuid') uuid: string) {
     await this.tasksService.delete(uuid);
 
-    return this.response(undefined, []);
+    return this.response([]);
   }
 }

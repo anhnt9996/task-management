@@ -27,6 +27,19 @@ export class AuthController extends BaseController {
       pick(body, ['username', 'password']),
     );
 
-    return this.response(HttpStatus.CREATED, omit(user, 'id'));
+    return this.response(
+      omit(user, 'id', 'salt', 'password'),
+      HttpStatus.CREATED,
+    );
+  }
+
+  @Post('sign-in')
+  @UsePipes(ValidationPipe)
+  async signIn(@Body() body: AuthCredentialsDTO) {
+    const accessToken = await this.authService.signIn(
+      pick(body, ['username', 'password']),
+    );
+
+    return this.response(accessToken);
   }
 }
