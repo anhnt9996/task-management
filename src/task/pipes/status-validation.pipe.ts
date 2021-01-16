@@ -1,5 +1,5 @@
-import { BadRequestException, PipeTransform } from '@nestjs/common';
 import { TaskStatus } from '../task.entity';
+import { BadRequestException, PipeTransform } from '@nestjs/common';
 
 export class TaskStatusValidationPipe implements PipeTransform {
   readonly allowedStatus = [
@@ -10,8 +10,12 @@ export class TaskStatusValidationPipe implements PipeTransform {
     TaskStatus.PENDING,
   ];
 
-  transform(value: any) {
-    if (!this.allowedStatus.includes(parseInt(value))) {
+  transform(value: number) {
+    if (!value) {
+      throw new BadRequestException('nextStatus is required');
+    }
+
+    if (!this.allowedStatus.includes(value)) {
       throw new BadRequestException(`Status '${value}' is invalid`);
     }
 

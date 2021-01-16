@@ -1,12 +1,12 @@
-import { Task, TaskStatus } from './task.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ITaskResponse } from './interfaces/task.response';
 import { TaskRepository } from './task.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTaskDTO } from './dto/create.dto';
 import { UpdateTaskDTO } from './dto/update.dto';
-import { isEmpty, pick } from 'lodash';
-import { TaskResponse } from './task.response';
+import { Task, TaskStatus } from './task.entity';
 import { FilterDto } from './dto/filter.dto';
+import { isEmpty, pick } from 'lodash';
 
 @Injectable()
 export class TasksService {
@@ -14,13 +14,13 @@ export class TasksService {
     @InjectRepository(TaskRepository) private taskRepository: TaskRepository,
   ) {}
 
-  async getTasks(query: FilterDto): Promise<TaskResponse[]> {
+  async getTasks(query: FilterDto): Promise<ITaskResponse[]> {
     const tasks = await this.taskRepository.getTasks(query);
 
     return tasks.map((task) => this.transformTask(task));
   }
 
-  async create(data: CreateTaskDTO): Promise<TaskResponse> {
+  async create(data: CreateTaskDTO): Promise<ITaskResponse> {
     if (isEmpty(data)) {
       return;
     }
@@ -30,7 +30,7 @@ export class TasksService {
     return this.transformTask(task);
   }
 
-  async getTaskByUUID(uuid: string): Promise<TaskResponse> | never {
+  async getTaskByUUID(uuid: string): Promise<ITaskResponse> | never {
     const task = await this.taskRepository.findOne({ uuid });
 
     if (!task) {
@@ -44,7 +44,7 @@ export class TasksService {
     return TaskStatus[status]?.toLowerCase()?.replace('_', ' ') || null;
   }
 
-  private transformTask(task: Task): TaskResponse {
+  private transformTask(task: Task): ITaskResponse {
     return {
       id: task.uuid,
       title: task.title,
@@ -66,9 +66,9 @@ export class TasksService {
 
   async updateStatus(
     uuid: string,
-    nextStatus: TaskStatus,
-  ): Promise<TaskResponse | never> {
-    await this.taskRepository.update({ uuid }, { status: nextStatus });
+    status: TaskStatus,
+  ): Promise<ITaskResponse | never> {
+    await this.taskRepository.update({ uuid }, { status });
 
     return this.getTaskByUUID(uuid);
   }
@@ -76,7 +76,7 @@ export class TasksService {
   async update(
     uuid: string,
     data: UpdateTaskDTO,
-  ): Promise<TaskResponse | never> {
+  ): Promise<ITaskResponse | never> {
     await this.taskRepository.update(
       { uuid },
       pick(data, ['title', 'description']),

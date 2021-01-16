@@ -1,28 +1,31 @@
 import { HttpExceptionFilter } from 'src/Exceptions/http-filter.exception';
 import { TaskStatusValidationPipe } from './pipes/status-validation.pipe';
+import { BodyWithUser } from 'src/auth/decorators/user-body.decorator';
+import { IAuthUSer } from 'src/auth/interfaces/auth-user.interface';
 import { BaseController } from 'src/base.controller';
 import { CreateTaskDTO } from './dto/create.dto';
 import { UpdateTaskDTO } from './dto/update.dto';
 import { TasksService } from './task.service';
+import { AuthGuard } from '@nestjs/passport';
+import { FilterDto } from './dto/filter.dto';
+import { TaskStatus } from './task.entity';
 import { omit, pick } from 'lodash';
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Put,
-  HttpCode,
-  UsePipes,
   ValidationPipe,
   UseFilters,
-  Query,
+  Controller,
   UseGuards,
+  HttpCode,
+  UsePipes,
+  Delete,
+  Param,
+  Query,
+  Post,
+  Body,
+  Get,
+  Put,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { TaskStatus } from './task.entity';
-import { FilterDto } from './dto/filter.dto';
-import { AuthGuard } from '@nestjs/passport';
 
 @Controller('tasks')
 @UseGuards(AuthGuard())
@@ -41,8 +44,11 @@ export class TasksController extends BaseController {
 
   @Post()
   @HttpCode(201)
-  @UsePipes(ValidationPipe)
-  async create(@Body() body: CreateTaskDTO) {
+  @UsePipes(new ValidationPipe({ validateCustomDecorators: true }))
+  async create(
+    @BodyWithUser()
+    body: CreateTaskDTO & { auth: IAuthUSer },
+  ) {
     const task = await this.tasksService.create({
       ...pick(body, ['title', 'description']),
     });
@@ -68,7 +74,7 @@ export class TasksController extends BaseController {
   @Put(':uuid/status')
   async updateStatus(
     @Param('uuid') uuid: string,
-    @Body('nextStatus', TaskStatusValidationPipe)
+    @Body('nextStatus', ParseIntPipe, TaskStatusValidationPipe)
     nextStatus: TaskStatus,
   ) {
     const task = await this.tasksService.updateStatus(uuid, nextStatus);

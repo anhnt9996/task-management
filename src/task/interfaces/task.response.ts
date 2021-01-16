@@ -1,6 +1,6 @@
-import { TaskStatus } from './task.entity';
+import { TaskStatus } from '../task.entity';
 
-export interface TaskResponse {
+export interface ITaskResponse {
   id: string;
   title: string;
   description: string;

@@ -1,16 +1,16 @@
-import { omit, pick } from 'lodash';
-import { AuthService } from './auth.service';
-import { BaseController } from 'src/base.controller';
-import { AuthCredentialsDTO } from './dto/auth-credentials.dto';
 import { HttpExceptionFilter } from 'src/Exceptions/http-filter.exception';
+import { AuthCredentialsDTO } from './dto/auth-credentials.dto';
+import { BaseController } from 'src/base.controller';
+import { AuthService } from './auth.service';
+import { omit, pick } from 'lodash';
 import {
-  Body,
+  ValidationPipe,
   Controller,
-  Post,
   HttpStatus,
   UseFilters,
   UsePipes,
-  ValidationPipe,
+  Body,
+  Post,
 } from '@nestjs/common';
 
 @Controller('')
