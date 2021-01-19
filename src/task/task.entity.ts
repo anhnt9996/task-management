@@ -7,7 +7,9 @@ import {
   Column,
   Entity,
   DeleteDateColumn,
+  ManyToOne,
 } from 'typeorm';
+import { User } from '../user/user.entity';
 
 export enum TaskStatus {
   NEW = 1,
@@ -25,6 +27,12 @@ export class Task extends BaseEntity {
   @Column()
   @Generated('uuid')
   uuid: string;
+
+  @ManyToOne(() => User, (user) => user.tasks, { eager: false })
+  user: User;
+
+  @Column()
+  userId: number;
 
   @Column()
   title: string;

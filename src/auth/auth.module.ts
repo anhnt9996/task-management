@@ -1,5 +1,5 @@
-import { UserRepository } from 'src/user/user.repository';
-import { JWT_SECRET_KEY } from 'src/config/app.config';
+import { UserRepository } from '../user/user.repository';
+import { JWT_SECRET_KEY } from '../config/app.config';
 import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';

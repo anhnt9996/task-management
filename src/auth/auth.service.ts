@@ -1,11 +1,11 @@
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import { AuthCredentialsDTO } from './dto/auth-credentials.dto';
 import { Injectable, ConflictException } from '@nestjs/common';
-import { UserRepository } from 'src/user/user.repository';
+import { UserRepository } from '../user/user.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { genSalt, hash } from 'bcryptjs';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class AuthService {

@@ -6,6 +6,7 @@ import { CreateTaskDTO } from './dto/create.dto';
 import { UpdateTaskDTO } from './dto/update.dto';
 import { Task, TaskStatus } from './task.entity';
 import { FilterDto } from './dto/filter.dto';
+import { User } from '../user/user.entity';
 import { isEmpty, pick } from 'lodash';
 
 @Injectable()
@@ -14,8 +15,8 @@ export class TasksService {
     @InjectRepository(TaskRepository) private taskRepository: TaskRepository,
   ) {}
 
-  async getTasks(query: FilterDto): Promise<ITaskResponse[]> {
-    const tasks = await this.taskRepository.getTasks(query);
+  async getTasks(query: FilterDto, user: User): Promise<ITaskResponse[]> {
+    const tasks = await this.taskRepository.getTasks(query, user);
 
     return tasks.map((task) => this.transformTask(task));
   }
@@ -30,8 +31,13 @@ export class TasksService {
     return this.transformTask(task);
   }
 
-  async getTaskByUUID(uuid: string): Promise<ITaskResponse> | never {
-    const task = await this.taskRepository.findOne({ uuid });
+  async getTaskByUUID(
+    uuid: string,
+    user: User,
+  ): Promise<ITaskResponse> | never {
+    const task = await this.taskRepository.findOne({
+      where: { uuid, userId: user.id },
+    });
 
     if (!task) {
       throw new HttpException(`Not found task #${uuid}`, HttpStatus.NOT_FOUND);
@@ -56,8 +62,8 @@ export class TasksService {
     };
   }
 
-  async delete(uuid: string): Promise<boolean | never> {
-    await this.getTaskByUUID(uuid);
+  async delete(uuid: string, user: User): Promise<boolean | never> {
+    await this.getTaskByUUID(uuid, user);
 
     this.taskRepository.softDelete({ uuid });
 
@@ -67,21 +73,23 @@ export class TasksService {
   async updateStatus(
     uuid: string,
     status: TaskStatus,
+    user: User,
   ): Promise<ITaskResponse | never> {
     await this.taskRepository.update({ uuid }, { status });
 
-    return this.getTaskByUUID(uuid);
+    return this.getTaskByUUID(uuid, user);
   }
 
   async update(
     uuid: string,
     data: UpdateTaskDTO,
+    user: User,
   ): Promise<ITaskResponse | never> {
     await this.taskRepository.update(
       { uuid },
       pick(data, ['title', 'description']),
     );
 
-    return this.getTaskByUUID(uuid);
+    return this.getTaskByUUID(uuid, user);
   }
 }

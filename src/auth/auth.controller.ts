@@ -1,6 +1,6 @@
-import { HttpExceptionFilter } from 'src/Exceptions/http-filter.exception';
+import { HttpExceptionFilter } from '../Exceptions/http-filter.exception';
 import { AuthCredentialsDTO } from './dto/auth-credentials.dto';
-import { BaseController } from 'src/base.controller';
+import { BaseController } from '../base.controller';
 import { AuthService } from './auth.service';
 import { omit, pick } from 'lodash';
 import {

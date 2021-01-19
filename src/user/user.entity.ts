@@ -7,7 +7,9 @@ import {
   Column,
   Entity,
   Unique,
+  OneToMany,
 } from 'typeorm';
+import { Task } from '../task/task.entity';
 
 @Entity('users')
 @Unique(['username'])
@@ -29,6 +31,9 @@ export class User extends BaseEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Task, (task) => task.user)
+  tasks: Task[];
 
   async validatePassword(password: string): Promise<boolean> {
     const hashedPassword = await hash(password, this.salt);
